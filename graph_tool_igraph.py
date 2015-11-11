@@ -1,5 +1,5 @@
-from igraph import *
 import collections
+from igraph import *
 
 class Graph(Graph):
     '''A class which extends the attributes of igraph's Graph so that it can be referenced as a graph_tool Graph class.'''
@@ -190,10 +190,10 @@ class Graph(Graph):
     def _get_id(self,o):
         if type(o) == int:
             return o
-        elif type(o) in [Vertex,Edge]:
+        elif hasattr(o,'index'):
             return o.index
         else:
-            raise ValueError("Must be of type int, Vertex or Edge, type {} given instead.".format(type(o)))
+            raise ValueError("Object has no index attribute or is not an int.")
     
     def reindex_edges():
         pass
@@ -201,15 +201,15 @@ class Graph(Graph):
     '''Methods for adding/accessing vertices or edges.'''
     def add_edge(self,v,w):
         vid = self._get_id(v)
-        wid = self._get_id(w)
+        wid = self._get_id(w)       
         
-        super(Graph,self).add_edge(vid,wid)
-        e = self.es.find(_source=vid,_target=wid)
+        super(Graph,self).add_edge(vid,wid)     
+        e = self.es[self.ecount()-1]
+      
         
         for prop in self.edge_properties:
             self.edge_properties[prop][e] = None
-            ###
-            #self.es[e.index][prop] = self.edge_properties[prop][e]
+            
         return e
     
     def add_vertex(self,n=1):
@@ -220,7 +220,7 @@ class Graph(Graph):
                 self.vertex_properties[prop][v] = None
         
         if n == 1:
-            return self.vs[-n:][0]
+            return self.vs[self.vcount()-1]
         else:
             return iter(self.vs[-n:])
         
@@ -244,7 +244,7 @@ class Graph(Graph):
         else:
             if kwds.get('add_missing'):
                 self.add_vertex( i + 1 - self.vcount() )
-                return self.vs[-1:][0]
+                return self.vs[self.vcount()-1]
             raise ValueError("Invalid vertex index. Call with 'add_missing=True' to add.")
     
     def vertices(self):
@@ -258,3 +258,18 @@ class Graph(Graph):
         
     def remove_edge(self,e):
         self.delete_edges(self._get_id(e))
+        
+    '''Methods for analysis.'''
+    def __local_clustering__(self,graph,weights=None):
+        
+        return self.transitivity_local_undirected(vertices=graph.vs,weights=weights)
+    
+class Edge(Edge):
+    
+    def source(self):
+        return self.graph.vs[self.source]
+    
+    def target(self):
+        return self.graph.vs[self.target]
+    
+'''Functions for analysis.''' #TODO
